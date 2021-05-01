@@ -898,20 +898,21 @@ class Amazon:
                 if retry > max_atc_retries:
                     return False
                 continue
+            # this page is weird, it doesn't actually move on.
+            # Click the button and check for new element indicating order was placed
             if place_order_button:
                 try:
-                    with self.wait_for_page_content_change():
-                        place_order_button.click()
+                    place_order_button.click()
                 except sel_exceptions.WebDriverException:
                     log.info("Could not click button, don't ask why")
                     retry += 1
                     if retry > max_atc_retries:
                         return False
                     continue
-                timeout = self.get_timeout(5)
-                while self.driver.title == "" and time.time() < timeout:
-                    time.sleep(0.5)
-                if self.driver.title in amazon_config["ORDER_COMPLETE_TITLES"]:
+                if wait_for_element_by_xpath(
+                    self.driver,
+                    '//div[@class="turbo-checkout-event-blocking-layer a-gesture"]',
+                ):
                     log.info("maybe this worked, check your orders")
                     self.save_screenshot("Order-Complete-Maybe")
                     successful = True
