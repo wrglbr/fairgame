@@ -28,7 +28,7 @@ from fake_useragent import UserAgent
 from amazoncaptcha import AmazonCaptcha
 
 from urllib.parse import urlparse
-
+from urllib.parse import parse_qs
 import re
 
 import requests
@@ -257,6 +257,7 @@ class AmazonMonitor(aiohttp.ClientSession):
                     )
                     if qualified_seller:
                         log.debug("Found an offer which meets criteria")
+                        self.send_notification("Found in stock offer!", "stock-check", True)
                         await queue.put(qualified_seller)
                         log.debug("Offer placed in queue")
                         log.debug("Quitting monitoring task")
@@ -354,6 +355,8 @@ def get_item_sellers(
     # First see if ASIN can be found with xpath
     # look for product ASIN
     page_asin = tree.xpath("//input[@id='ftSelectAsin']")
+    #parsed = urlparse.urlparse(item.furl)
+    #page_asin = parse_qs(parsed.query)['asin'][0]
     if page_asin:
         try:
             found_asin = page_asin[0].value.strip()
