@@ -204,7 +204,7 @@ class AmazonMonitor(aiohttp.ClientSession):
         # and return to start of while loop with that response. Requires the next response
         # to be grabbed at end of while loop
         log.debug(f"Monitoring Task Started for {self.item.id}")
-
+     
         fail_counter = 0  # Count sequential get fails
         delay = 5
         end_time = time.time() + delay

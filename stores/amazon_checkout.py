@@ -304,8 +304,9 @@ class AmazonCheckoutHandler(BaseStoreHandler):
                 idx = (idx + 1) % len(DOTS)
                 time.sleep(0.5)
             print("", end="\r")
+        self.send_notification("logged in!", "homepage")
         log.info(f'Logged in as {self.amazon_config["username"]}')
-        self.send_notification("AIO logged in and started successfully", "homepage", True)
+        
     def delete_driver(self):
         try:
             self.driver.quit()
@@ -400,7 +401,7 @@ class AmazonCheckoutHandler(BaseStoreHandler):
 
     async def checkout_worker(self, queue: asyncio.Queue, login_interval=7200):
         log.debug("Checkout Task Started")
-        self.send_notification("Checkout started", "checkout", True)
+
         log.debug("Logging in and pulling cookies from Selenium")
         cookies = self.pull_cookies()
         log.debug("Cookies from Selenium:")
@@ -433,6 +434,7 @@ class AmazonCheckoutHandler(BaseStoreHandler):
             if pid and anti_csrf:
                 if await turbo_checkout(s=session, pid=pid, anti_csrf=anti_csrf):
                     log.info("Maybe completed checkout")
+                    self.send_notification("Maybe completed checkout!", "turbo-checkout")
                     time_difference = time.time() - start_time
                     log.info(
                         f"Time from stock found to checkout: {round(time_difference,2)} seconds."
@@ -443,7 +445,7 @@ class AmazonCheckoutHandler(BaseStoreHandler):
                             f"https://{domain}/gp/buy/thankyou/handlers/display.html?_from=cheetah&checkMFA=1&purchaseId={pid}&referrer=yield&pid={pid}&pipelineType=turbo&clientId=retailwebsite&temporaryAddToCart=1&hostPage=detail&weblab=RCX_CHECKOUT_TURBO_DESKTOP_PRIME_87783",
                         )
                         save_html_response("order-confirm", status, text)
-                        self.send_notification("Order placed, check email!", "order-confirm", True)
+                        self.send_notification("Order confirm!", "order-confirm")
                     except aiohttp.ClientError:
                         log.debug("could not save order confirmation page")
                     await session.close()
@@ -511,7 +513,6 @@ async def turbo_initiate(
     captcha_element = True  # to initialize loop
     status, text = await aio_post(client=s, url=url, data=payload_inputs)
     save_html_response("turbo-initiate", status, text)
-    self.send_notification("Initiating Turbo checkout!", "turbo-initiate", True)
     tree: Optional[html.HtmlElement] = None
     while retry < MAX_RETRY and captcha_element:
         tree = check_response(text)
@@ -552,7 +553,7 @@ async def turbo_checkout(s: aiohttp.ClientSession, pid, anti_csrf):
     save_html_response("turbo_checkout", status, text)
     if status == 200 or status == 500:
         log.debug("Checkout maybe successful, check order page!")
-        self.send_notification("Checkout maybe successful, check order page!", "turbo_checkout", True)
+        self.send_notification("Checkout maybe successful, check order page!", "turbo-checkout")
         # TODO: Implement GET request to confirm checkout
         return True
 
